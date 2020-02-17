@@ -2,8 +2,11 @@ const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
 const encrpt = require('./encryption');
+const authorization = require("./authorization");
 
 const UserDetails = require("../models/UserDetails");
+
+var userController = require('../controller/users.controller');
 
 router.get("/", (req, res, next) => {
   Product.find()
@@ -49,44 +52,24 @@ router.post("/signup", (req, res, next) => {
   })
 });
 
-// sign in
-router.post("/signin", (req, res, next) => {
-  console.log("sign in", req.body);
-  UserDetails.findOne({
-      email: req.body.email
-    }, {})
-    .exec()
-    .then(doc => {
-      console.log("From database", doc);
-      if (doc) {
-        const hash = encrpt.encryption(req.body.password);
-        if (doc.password == hash) {
-          const token = encrpt.jwtMethod(req.body.email)
-          console.log(req.body.email + " login successfull");
-          res.status(200).json({
-            token: token
-          });
-        } else {
-          console.log("invalid pwd");
-          res.status(403).json({
-            message: "Invalid email or password"
-          })
-        }
-      } else {
-        res
-          .status(403)
-          .json({
-            message: "Invalid email or password"
-          });
-      }
-    })
-    .catch(err => {
-      console.log(err);
-      res.status(500).json({
-        error: err
-      });
+// refresh Token
+router.get("/refreshToken/:user", (req, res, next) => {
+  console.log("/refreshToken/:user", req.params.user);
+  if (req.params.user) {
+    const token = authorization.jwtMethod(req.params.user);
+    res.status(200).json({
+      token: token
     });
+  } else {
+    console.log(err);
+    res.status(500).json({
+      message: "No email is provided for refesh token."
+    });
+  }
 });
+
+// sign in
+router.post("/signin", userController.loginUser);
 
 // Verify Email
 router.post("/signin/email", (req, res, next) => {

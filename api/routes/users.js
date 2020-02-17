@@ -3,18 +3,17 @@ const router = express.Router();
 const mongoose = require("mongoose");
 const UserDetails = require("../models/UserDetails");
 const Minikit = require("./../models/minikit");
-const encryption = require('./encryption');
+const authorization = require("./authorization");
 
 // Handle incoming GET requests to /Users
 router.get('/', (req, res, next) => {
+    // authorization.authorization(req, res, next);
     const filters = req.query;
-    console.log("before", filters);
     if (req.query.id != null) {
         filters = {
             _id: req.body.id
         }
     }
-    console.log("after", filters);
     UserDetails.find(filters, {
             password: 0,
             confirmPassword: 0
@@ -37,6 +36,7 @@ router.get('/', (req, res, next) => {
                 error: err
             });
         });
+
 });
 
 // update user
@@ -60,6 +60,25 @@ router.put('/update', (req, res, next) => {
                         message: "No Content"
                     });
             }
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                error: err
+            });
+        });
+});
+
+
+/* user delete */
+router.delete("/delete/:id", (req, res, next) => {
+    const id = req.params.id;
+    UserDetails.remove({
+            _id: id
+        })
+        .exec()
+        .then(result => {
+            res.status(200).json(result);
         })
         .catch(err => {
             console.log(err);
