@@ -1,8 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const mongoose = require("mongoose");
-const encrpt = require('./encryption');
-const authorization = require("./authorization");
+const jwtToken = require('../auth/jwtToken');
 
 const UserDetails = require("../models/UserDetails");
 
@@ -24,39 +22,14 @@ router.get("/", (req, res, next) => {
 });
 
 // sign up
-router.post("/signup", (req, res, next) => {
-  console.log("signup", req.body);
-  const hash = encrpt.encryption(req.body.password);
-  console.log(hash);
-  const userDetails = new UserDetails({
-    _id: new mongoose.Types.ObjectId(),
-    name: req.body.name,
-    designation: req.body.designation,
-    email: req.body.email,
-    password: hash,
-    confirmPassword: req.body.confirmPassword,
-    phoneNumber: req.body.phoneNumber,
-    dob: req.body.dob
-  });
-  UserDetails.collection.insertOne(userDetails, (error, result) => {
-    if (error) {
-      res.status(500).json({
-        error: err
-      });
-    } else {
-      res.status(200).json({
-        message: userDetails.email + "User created successfully",
-        user: result.ops
-      });
-    }
-  })
-});
+router.post("/signup", userController.createUser);
 
 // refresh Token
-router.get("/refreshToken/:user", (req, res, next) => {
-  console.log("/refreshToken/:user", req.params.user);
-  if (req.params.user) {
-    const token = authorization.jwtMethod(req.params.user);
+router.get("/refreshToken/:email", (req, res, next) => {
+  console.log("/refreshToken/:email", req.params.email);
+  if (req.params.email) {
+    const token = jwtToken.jwtMethod(req.params.email);
+    console.log(token);
     res.status(200).json({
       token: token
     });

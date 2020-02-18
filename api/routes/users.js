@@ -1,95 +1,22 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require("mongoose");
-const UserDetails = require("../models/UserDetails");
 const Minikit = require("./../models/minikit");
-const authorization = require("./authorization");
+
+const Authorization = require('../auth/authorization');
+const userController = require('../controller/users.controller');
 
 // Handle incoming GET requests to /Users
-router.get('/', (req, res, next) => {
-    // authorization.authorization(req, res, next);
-    const filters = req.query;
-    if (req.query.id != null) {
-        filters = {
-            _id: req.body.id
-        }
-    }
-    UserDetails.find(filters, {
-            password: 0,
-            confirmPassword: 0
-        })
-        .exec()
-        .then(doc => {
-            console.log("From database", doc);
-            if (doc) {
-                res.status(200).json(doc);
-            } else {
-                res.status(204)
-                    .json({
-                        message: "No Content"
-                    });
-            }
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json({
-                error: err
-            });
-        });
-
-});
+router.get('/', Authorization, userController.getUsers);
 
 // update user
-router.put('/update', (req, res, next) => {
-    console.log('update body', req.body);
-    const query = req.body;
-    const userId = query._id;
-    delete query['id'];
-
-    UserDetails.findByIdAndUpdate(userId, query, {
-            new: true
-        })
-        .exec()
-        .then(doc => {
-            console.log("From database", doc);
-            if (doc) {
-                res.status(200).json(doc);
-            } else {
-                res.status(204)
-                    .json({
-                        message: "No Content"
-                    });
-            }
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json({
-                error: err
-            });
-        });
-});
-
+router.put('/update', Authorization, userController.updateUser);
 
 /* user delete */
-router.delete("/delete/:id", (req, res, next) => {
-    const id = req.params.id;
-    UserDetails.remove({
-            _id: id
-        })
-        .exec()
-        .then(result => {
-            res.status(200).json(result);
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json({
-                error: err
-            });
-        });
-});
+router.delete("/delete/:id", Authorization, userController.removeUser);
 
 /* minikit */
-router.post('/minikit', (req, res, next) => {
+router.post('/minikit', Authorization, (req, res, next) => {
     console.log("minikit", req.body);
     const minikit = new Minikit({
         _id: new mongoose.Types.ObjectId(),
@@ -116,7 +43,7 @@ router.post('/minikit', (req, res, next) => {
 });
 
 /* minikit get table list */
-router.get('/minikit', (req, res, next) => {
+router.get('/minikit', Authorization, (req, res, next) => {
     Minikit.find()
         .exec()
         .then(docs => {
@@ -132,7 +59,7 @@ router.get('/minikit', (req, res, next) => {
 });
 
 // update minkit
-router.put('/minikit/update', (req, res, next) => {
+router.put('/minikit/update', Authorization, (req, res, next) => {
     console.log('update body', req.body);
     const query = req.body;
     const userId = query._id;
@@ -162,7 +89,7 @@ router.put('/minikit/update', (req, res, next) => {
 });
 
 /* minikit delete */
-router.delete("/minikit/delete/:id", (req, res, next) => {
+router.delete("/minikit/delete/:id", Authorization, (req, res, next) => {
     const id = req.params.id;
     Minikit.remove({
             _id: id

@@ -1,9 +1,9 @@
 // Gettign the Newly created Mongoose Model we just created 
 var User = require('../models/UserDetails');
-var jwt = require('jsonwebtoken');
 var pswdEncryption = require('../routes/encryption');
+const jwtToken = require('../auth/jwtToken');
 
-// Saving the context of this module inside the _the variable
+// Saving the context of this module inside the _this variable
 _this = this
 
 // Async function to get the User List
@@ -16,10 +16,9 @@ exports.getUsers = async function (query, page, limit) {
     }
     // Try Catch the awaited promise to handle the error 
     try {
-        var Users = await User.paginate(query, options)
+        var Users = await User.find(query);
         // Return the Userd list that was retured by the mongoose promise
         return Users;
-
     } catch (e) {
         // return a Error message describing the reason 
         throw Error('Error while Paginating Users');
@@ -28,23 +27,13 @@ exports.getUsers = async function (query, page, limit) {
 
 exports.createUser = async function (user) {
     // Creating a new Mongoose Object by using the new keyword
-    var hashedPassword = bcrypt.hashSync(user.password, 8);
-    var newUser = new User({
-        name: user.name,
-        email: user.email,
-        date: new Date(),
-        password: hashedPassword
-    })
-
+    console.log("user",user);
+    const hased = pswdEncryption.pwdEncryption(user.password);
+    user.password = hased;
     try {
         // Saving the User 
-        var savedUser = await newUser.save();
-        var token = jwt.sign({
-            id: savedUser._id
-        }, process.env.SECRET, {
-            expiresIn: 86400 // expires in 24 hours
-        });
-        return token;
+        var savedUser = await User.collection.insertOne(user);
+        return savedUser;
     } catch (e) {
         // return a Error message describing the reason     
         throw Error("Error while Creating User")
@@ -52,10 +41,11 @@ exports.createUser = async function (user) {
 }
 
 exports.updateUser = async function (user) {
-    var id = user.id
+    var id = user._id
+    // console.log("id",id);
     try {
         //Find the old User Object by the Id
-        var oldUser = await User.findById(id);
+        var oldUser = await User.findByIdAndUpdate(id);
     } catch (e) {
         throw Error("Error occured while Finding the User")
     }
@@ -65,8 +55,10 @@ exports.updateUser = async function (user) {
     }
     //Edit the User Object
     oldUser.name = user.name
+    oldUser.designation = user.designation
+    oldUser.dob = user.dob
     oldUser.email = user.email
-    oldUser.password = user.password
+    oldUser.phoneNumber = user.phoneNumber
     try {
         var savedUser = await oldUser.save()
         return savedUser;
@@ -79,7 +71,7 @@ exports.deleteUser = async function (id) {
 
     // Delete the User
     try {
-        var deleted = await User.remove({
+        var deleted = await User.deleteOne({
             _id: id
         })
         if (deleted.n === 0 && deleted.ok === 1) {
@@ -91,9 +83,7 @@ exports.deleteUser = async function (id) {
     }
 }
 
-
 exports.loginUser = async function (user) {
-
     // Creating a new Mongoose Object by using the new keyword
     console.log("user service", user);
     try {
@@ -106,13 +96,9 @@ exports.loginUser = async function (user) {
             password: 1
         });
         if (doc) {
-            const hash = pswdEncryption.encryption(user.password);
+            const hash = pswdEncryption.pwdEncryption(user.password);
             if (doc.password === hash) {
-                var token = jwt.sign({
-                    email: doc.email
-                }, process.env.JWT_SECRET_KEY, {
-                    expiresIn: '1h'
-                });
+                var token = jwtToken.jwtMethod(user.email);
             } else {
                 throw Error("Invalid Password");
             }

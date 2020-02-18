@@ -1,4 +1,7 @@
 var UserService = require('../services/users.service');
+const UserDetails = require('../models/UserDetails');
+const mongoose = require('mongoose');
+const passwordEncrpt = require('../routes/encryption');
 
 // Saving the context of this module inside the _the variable
 _this = this;
@@ -13,7 +16,6 @@ exports.getUsers = async function (req, res, next) {
         var Users = await UserService.getUsers({}, page, limit)
         // Return the Users list with the appropriate HTTP password Code and Message.
         return res.status(200).json({
-            status: 200,
             data: Users,
             message: "Succesfully Users Recieved"
         });
@@ -28,48 +30,55 @@ exports.getUsers = async function (req, res, next) {
 
 exports.createUser = async function (req, res, next) {
     // Req.Body contains the form submit values.
-    var User = {
+    const userDetails = new UserDetails({
+        _id: new mongoose.Types.ObjectId(),
         name: req.body.name,
+        designation: req.body.designation,
         email: req.body.email,
-        password: req.body.password
-    }
+        password: req.body.password,
+        confirmPassword: req.body.confirmPassword,
+        phoneNumber: req.body.phoneNumber,
+        dob: req.body.dob,
+    });
     try {
         // Calling the Service function with the new object from the Request Body
-        var createdUser = await UserService.createUser(User)
+        var createdUser = await UserService.createUser(userDetails);
         return res.status(201).json({
-            token: createdUser,
+            data: createdUser,
             message: "Succesfully Created User"
         })
     } catch (e) {
         //Return an Error Response Message with Code and the Error Message.
-        return res.status(400).json({
-            status: 400,
+        return res.status(501).json({
             message: "User Creation was Unsuccesfull"
         })
     }
 }
 
+// completed update user and tested
 exports.updateUser = async function (req, res, next) {
+
+    // console.log('update body', req.body);
 
     // Id is necessary for the update
     if (!req.body._id) {
-        return res.status(400).json({
-            status: 400.,
+        return res.status(501).json({
             message: "Id must be present"
         })
     }
 
-    var id = req.body._id;
     var User = {
-        id,
+        _id: req.body._id,
         name: req.body.name ? req.body.name : null,
+        designation: req.body.designation ? req.body.designation : null,
+        dob: req.body.dob ? req.body.dob : null,
         email: req.body.email ? req.body.email : null,
-        password: req.body.password ? req.body.password : null
+        phoneNumber: req.body.phoneNumber ? req.body.phoneNumber : null,
     }
+
     try {
         var updatedUser = await UserService.updateUser(User)
         return res.status(200).json({
-            status: 200,
             data: updatedUser,
             message: "Succesfully Updated User"
         })
@@ -81,9 +90,10 @@ exports.updateUser = async function (req, res, next) {
     }
 }
 
+// completed delete operation and tested
 exports.removeUser = async function (req, res, next) {
-
-    var id = req.params.id;
+    const id = req.params.id;
+    console.log("id", req.params.id);
     try {
         var deleted = await UserService.deleteUser(id);
         res.status(200).send("Succesfully Deleted... ");
@@ -95,7 +105,7 @@ exports.removeUser = async function (req, res, next) {
     }
 }
 
-
+// completed login and tested
 exports.loginUser = async function (req, res, next) {
     // Req.Body contains the form submit values.
     var User = {
