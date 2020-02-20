@@ -1,7 +1,6 @@
 var UserService = require('../services/users.service');
 const UserDetails = require('../models/UserDetails');
 const mongoose = require('mongoose');
-const passwordEncrpt = require('../routes/encryption');
 
 // Saving the context of this module inside the _the variable
 _this = this;
@@ -38,19 +37,20 @@ exports.createUser = async function (req, res, next) {
         password: req.body.password,
         confirmPassword: req.body.confirmPassword,
         phoneNumber: req.body.phoneNumber,
-        dob: req.body.dob,
+        dob: req.body.dob
     });
     try {
         // Calling the Service function with the new object from the Request Body
         var createdUser = await UserService.createUser(userDetails);
         return res.status(201).json({
-            data: createdUser,
+            data: createdUser.ops,
             message: "Succesfully Created User"
         })
     } catch (e) {
         //Return an Error Response Message with Code and the Error Message.
         return res.status(501).json({
-            message: "User Creation was Unsuccesfull"
+            message: "User Creation was Unsuccesfull",
+            validation: user.message
         })
     }
 }

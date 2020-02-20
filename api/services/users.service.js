@@ -27,16 +27,17 @@ exports.getUsers = async function (query, page, limit) {
 
 exports.createUser = async function (user) {
     // Creating a new Mongoose Object by using the new keyword
-    console.log("user",user);
+    console.log("user", user);
     const hased = pswdEncryption.pwdEncryption(user.password);
     user.password = hased;
     try {
-        // Saving the User 
+        // Saving the User
         var savedUser = await User.collection.insertOne(user);
         return savedUser;
     } catch (e) {
-        // return a Error message describing the reason     
-        throw Error("Error while Creating User")
+        // return a Error message describing the reason    
+        console.log("e service", e);
+        throw Error("Error while Creating User");
     }
 }
 
